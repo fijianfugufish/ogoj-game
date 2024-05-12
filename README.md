@@ -14,7 +14,7 @@ the code is really bad and probably really ineficient, don't judge me - it is my
 to turn hitboxes *off* change `self.showHitbox` to `False` under the `player` class
 ```python
 class player(gameSprite):
-  def __init__(self,sprite,X,Y,w,h,speed,jump) :
+  def __init__(self,sprite,X,Y,w,h,speed,jump):
     super().__init__(sprite,X,Y,w,h,speed)
     self.jump = jump
     self.jumping = False
