@@ -10,6 +10,7 @@ the code is really bad and probably really ineficient, don't judge me - it is my
 - E to use 'red'
 - 'infinity' is passive
 
+### other stuff
 to turn hitboxes *off* change `self.showHitbox` to `False` under the `player` class
 ```python
 class player(gameSprite):
