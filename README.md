@@ -5,8 +5,13 @@ it was just supposed to be a supid thing to test my skills, but it ended up beco
 
 the code is really bad and probably really ineficient, don't judge me - it is my first platformer style thing
 
+## controls
+- WASD to move
+- E to use 'red'
+- 'infinity' is passive
+
 to turn hitboxes *off* change `self.showHitbox` to `False` under the `player` class
-```
+```python
 class player(gameSprite):
   def __init__(self,sprite,X,Y,w,h,speed,jump) :
     super().__init__(sprite,X,Y,w,h,speed)
