@@ -24,3 +24,5 @@ class player(gameSprite):
     self.rcd = 2 * 60
     self.direction = True
 ```
+
+this game is mainly just a test, not some super cool game you were hoping for
