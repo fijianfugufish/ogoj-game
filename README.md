@@ -14,7 +14,7 @@ the code is really bad and probably really ineficient, don't judge me - it is my
 [ogoj-game.zip](https://github.com/fijianfugufish/ogoj-game/files/15286959/ogoj-game.zip)
 
 ### other stuff
-to turn hitboxes *off* change `self.showHitbox` to `False` under the `player` class
+to turn hitboxes *off* change ```self.showHitbox``` to ```False``` under the ```player``` class
 ```python
 class player(gameSprite):
   def __init__(self,sprite,X,Y,w,h,speed,jump):
