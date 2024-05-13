@@ -1,6 +1,7 @@
 # ogoj-game
 based off of gojo from jjk
 
+
 It was just supposed to be a supid thing to test my skills, but it ended up becoming my best project.
 
 The code is really bad, messy and probably really ineficient. don't judge me - it is my first platformer style thing.
