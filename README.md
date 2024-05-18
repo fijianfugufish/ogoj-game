@@ -12,7 +12,7 @@ The code is really bad, messy and probably really ineficient. Don't judge me - i
 - 'infinity' is passive
 
 ### download
-[ogoj-game.zip](https://github.com/fijianfugufish/ogoj-game/files/15286959/ogoj-game.zip)
+[ogoj game.zip](https://github.com/fijianfugufish/ogoj-game/files/15362631/ogoj.game.zip)
 
 ### other stuff
 To turn hitboxes *off* change ```self.showHitbox``` to ```False``` under the ```player``` class.
