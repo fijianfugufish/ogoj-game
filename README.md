@@ -12,7 +12,7 @@ The code is really bad, messy and probably really ineficient. Don't judge me - i
 - 'infinity' is passive
 
 ### download
-[ogoj game.zip](https://github.com/fijianfugufish/ogoj-game/files/15362631/ogoj.game.zip)
+[ogoj game.zip](https://github.com/fijianfugufish/ogoj-game/files/15362741/ogoj.game.zip)
 
 ### updates
 - fixed 'infinity' having slight attraction force
