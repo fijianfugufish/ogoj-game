@@ -14,6 +14,11 @@ The code is really bad, messy and probably really ineficient. Don't judge me - i
 ### download
 [ogoj game.zip](https://github.com/fijianfugufish/ogoj-game/files/15362631/ogoj.game.zip)
 
+### updates
+- fixed 'infinity' having slight attraction force
+- added a dummy to test attacks on
+- started on a class for GUI
+
 ### other stuff
 To turn hitboxes *off* change ```self.showHitbox``` to ```False``` under the ```player``` class.
 ```python
