@@ -1,4 +1,5 @@
 from pygame import *
+import sys
 from math import sqrt, pow, dist
 
 winx = 1200
@@ -16,6 +17,8 @@ window = display.set_mode((winx,winy))
 display.set_caption('super cool ogoj game')
 window.fill((100,100,100))
 
+font.init()
+
 class gameSprite(sprite.Sprite):
     def __init__(self,sprite,X,Y,w,h,speed):
         super().__init__()
@@ -31,9 +34,76 @@ class gameSprite(sprite.Sprite):
     def blit(self):
         window.blit(self.image,(self.rect.x,self.rect.y))
     def checkCollision(self,obj):
-        return Rect.colliderect(self.rect, obj.rect)
+        return Rect.colliderect(self.rect,obj.rect)
     def checkCollisionWOtherRect(self,obj1,obj2):
-        return Rect.colliderect(obj1, obj2.rect)
+        return Rect.colliderect(obj1,obj2.rect)
+
+class GUI(sprite.Sprite):
+    def __init__(self,X,Y,w,h,col,trans):
+        self.w = w
+        self.h = h
+        self.x = X
+        self.y = Y
+        self.rect = Rect(0,0,w,h)
+        self.colour = col
+        self.transparency = trans
+        self.surface = Surface((w,h))
+        self.surface.set_alpha(trans)
+        self.font = font.SysFont('Arial', 25)
+        self.display = ''
+        global ui
+        ui.append(self)
+    def draw(self):
+        global window
+        draw.rect(self.surface,self.colour,self.rect)
+        if not self.display == '':
+            self.surface = self.font.render(self.display,False,(255,0,0))
+        self.surface.set_alpha(self.transparency)
+        window.blit(self.surface,(self.x,self.y))
+
+class surfaceGUI(GUI):
+    def __init__(self,X,Y,w,h,col,trans):
+        super().__init__(X,Y,w,h,col,trans)
+        global scrolls
+        scrolls.append(self)
+    def scroll(self,movement):
+        self.x += movement
+
+class damageSurfaceGUI(surfaceGUI):
+    def __init__(self,X,Y,w,h,col,trans,damage):
+        super().__init__(X,Y,w,h,col,trans)
+        self.count = 0
+        self.display = str(damage)
+        self.x -= self.w/2
+    def stepAnim(self):
+        self.count += 1
+        self.transparency -= 5
+        self.y -= 1
+        if self.transparency == 0:
+            global ui
+            ui.remove(self)
+        
+class person(gameSprite):
+    def __init__(self,sprite,X,Y,w,h,speed,health):
+        super().__init__(sprite,X,Y,w,h,speed)
+        self.health = health
+        self.spriteString = sprite
+        global peopole
+        people.append(self)
+        global scrolls
+        scrolls.append(self)
+    def hit(self,dangerous):
+        for i in dangerous:
+            if self.checkCollision(i):
+                self.health -= i.damage
+                damageUI = damageSurfaceGUI(self.rect.x + self.w/2,self.rect.y,50,50,(255,0,0),255,i.damage)
+        if self.health <= 0 and not self.spriteString == 'log.png':
+            global peopole
+            people.remove(self)
+            global scrolls
+            scrolls.remove(self)
+    def scroll(self,movement):
+        self.rect.x += movement
 
 class effect(gameSprite):
     def __init__(self,sprite,X,Y,w,h,speed,creator):
@@ -84,6 +154,9 @@ class actuallyRed(effect):
         super().__init__(sprite,X,Y,w,h,speed,creator)
         global scrolls
         scrolls.append(self)
+        global dangerous
+        dangerous.append(self)
+        self.damage = float('inf')
     def stepAnim(self):
         self.count += 1
         if self.count >= 60:
@@ -96,6 +169,10 @@ class actuallyRed(effect):
             self.rect.x += self.speed
             if (self.rect.x > winx + 500) or (self.rect.x < -500):
                 self.creator.abilitiesToBlit.remove(self)
+                global scrolls
+                scrolls.remove(self)
+                global dangerous
+                dangerous.remove(self)
         else:
             self.lockToPlayer(self.creator)
     def scroll(self,movement):
@@ -113,24 +190,25 @@ class splat(effect):
             self.lockToPlayer(self.creator)
         self.transparency(-10)
         if self.alpha == 0:
-            #global bullets
-            #bullets.remove(self.creator)
+            global bullets
+            bullets.remove(self.creator)
             self.creator.effects.remove(self)
     def scroll(self,movement):
         self.rect.x += movement
         
 class solid(gameSprite):
-    def __init__(self,sprite,X,Y,w,h,speed,group):
+    def __init__(self,sprite,X,Y,w,h,speed,group,noScroll):
         super().__init__(sprite,X,Y,w,h,speed)
         group.append(self)
-        global scrolls
-        scrolls.append(self)
+        if not noScroll:
+            global scrolls
+            scrolls.append(self)
     def scroll(self,movement):
         self.rect.x += movement
 
 class turret(solid):
     def __init__(self,sprite,X,Y,w,h,speed,group,firerate,shotSpeed,group2):
-        super().__init__(sprite,X,Y,w,h,speed,group)
+        super().__init__(sprite,X,Y,w,h,speed,group,False)
         self.firerate = firerate
         self.shotSpeed = shotSpeed
         self.counter = 0
@@ -141,8 +219,6 @@ class turret(solid):
         self.counter += 1
         if counter == self.firerate:
             shot = bullet("bullet.png",(self.rect.x + self.w/2) - 15,(self.rect.y + self.h/2) - 15,30,30,self.shotSpeed,self)
-            global bullets
-            bullets.append(shot)
 
 class bullet(gameSprite):
     def __init__(self,sprite,X,Y,w,h,speed,parent):
@@ -150,27 +226,43 @@ class bullet(gameSprite):
         self.parent = parent
         self.origSpeed = speed
         self.effects = []
+        self.gotgot = False
         global scrolls
+        global dangerous
+        global bullets
         scrolls.append(self)
+        dangerous.append(self)
+        bullets.append(self)
+        self.damage = 10
     def move(self):
         self.rect.x += self.speed
-        if (self.rect.x > winx + 500) or (self.rect.x < -500):
+        if ((self.rect.x > winx + 500) or (self.rect.x < -500)) and not self.gotgot:
             global bullets
             bullets.remove(self)
+            global dangerous
+            dangerous.remove(self)
     def scroll(self,movement):
         self.rect.x += movement
     def splat(self,objects):
         for i in objects:
             if self.checkCollision(i):
-                global bullets
+                global scrolls
+                if self in scrolls:
+                    scrolls.remove(self)
+                global dangerous
+                if self in dangerous:
+                    dangerous.remove(self)
                 squirt = splat("splat.png",(self.rect.x + self.w/2) - 50,(self.rect.y + self.h/2) - 50,100,100,0,self)
                 self.effects.append(squirt)
                 self.image = transform.scale(image.load("nil.png"),(0,0))
-                self.rect.y = 10000
+                self.gotgot = True
+                break
     def effect(self):
-        for i in self.effects:
-            i.blit()
-            i.stepAnim()
+        try:
+            self.effects[0].blit()
+            self.effects[0].stepAnim()
+        except:
+            pass
 
 class player(gameSprite):
     def __init__(self,sprite,X,Y,w,h,speed,jump):
@@ -190,6 +282,7 @@ class player(gameSprite):
             self.direction = False
             for i in scrolls:
                 i.scroll(self.speed)
+            #bg.x += self.speed
         if (keysPressed[K_d]):
             #self.rect.x += self.speed
             self.direction = True
@@ -200,7 +293,7 @@ class player(gameSprite):
             self.yv = self.jump
     def gravity(self,objects):
         collidedDown = False
-        nextFrameRect = Rect((self.rect.x + (self.w / 8) * 3),self.rect.y + self.h - 10,(self.w / 4),10)
+        nextFrameRect = Rect((self.rect.x + (self.w / 8) * 3),self.rect.y + self.h - 10 - self.yv,(self.w / 4),10)
         self.hitboxes.append(nextFrameRect)
         for i in objects:
             collidedDown = collidedDown or self.checkCollisionWOtherRect(nextFrameRect,i)
@@ -208,7 +301,8 @@ class player(gameSprite):
             self.yv -= 1
             self.rect.y -= self.yv
         else:
-            self.rect.y += self.yv - 0.25
+            if not self.yv - 0.5 > 0:
+                self.rect.y += self.yv - 0.5
             self.yv = 0
             self.jumping = False
         if self.showHitbox:
@@ -221,10 +315,10 @@ class player(gameSprite):
         for i in objects:
             collidedRight = collidedRight or self.checkCollisionWOtherRect(nextFrameRect,i)
         if collidedRight:
-            #self.rect.x -= self.speed + 0.25
+            #self.rect.x -= self.speed + 0.5
             global scrolls
             for i in scrolls:
-                i.scroll(self.speed +0.25)
+                i.scroll(self.speed + 0.5)
         if self.showHitbox:
             self.showHitboxes(self.hitboxes,(255,0,0))
         self.hitboxes.remove(nextFrameRect)
@@ -235,10 +329,10 @@ class player(gameSprite):
         for i in objects:
             collidedLeft = collidedLeft or self.checkCollisionWOtherRect(nextFrameRect,i)
         if collidedLeft:
-            #self.rect.x += self.speed + 0.25
+            #self.rect.x += self.speed + 0.5
             global scrolls
             for i in scrolls:
-                i.scroll(-1 * (self.speed + 0.25))
+                i.scroll(-1 * (self.speed + 0.75))
         if self.showHitbox:
             self.showHitboxes(self.hitboxes,(255,0,0))
         self.hitboxes.remove(nextFrameRect)
@@ -249,7 +343,8 @@ class player(gameSprite):
         for i in objects:
             collidedUp = collidedUp or self.checkCollisionWOtherRect(nextFrameRect,i)
         if collidedUp:
-            self.rect.y += self.yv + 0.25
+            if not self.yv + 0.5 < 0:
+                self.rect.y += self.yv + 0.5
             self.yv *= -0.5
         if self.showHitbox:
             self.showHitboxes(self.hitboxes,(255,0,0))
@@ -259,10 +354,10 @@ class player(gameSprite):
             draw.rect(window,col,i,2)
     def physics(self,objects):
         self.move(objects)
-        self.restrainMovementR(objects)
-        self.restrainMovementL(objects)
         self.gravity(objects)
         self.restrictJump(objects)
+        self.restrainMovementR(objects)
+        self.restrainMovementL(objects)
     def cursedTechinqueReversalRed(self):
         keysPressed = key.get_pressed()
         if keysPressed[K_e] and self.rcd <= 0:
@@ -285,8 +380,10 @@ class player(gameSprite):
             if distance <= 500 and distance > 150:
                 distance -= 200
                 distance = distance/350
-                if not (i.origSpeed * distance < 0 and i.origSpeed > 0) or (i.origSpeed * distance > 0 and i.origSpeed < 0): 
+                if not ((i.origSpeed * distance < 0 and i.origSpeed > 0) or (i.origSpeed * distance > 0 and i.origSpeed < 0)): 
                     i.speed = i.origSpeed * distance
+                else:
+                    i.speed = 0
             elif distance <= 150 and distance > 100:
                 i.speed = 0
             elif distance <= 100:
@@ -316,18 +413,24 @@ class player(gameSprite):
     def cooldowns(self):
         self.rcd -= 1
 
+people = []
 ogoj = player("ogoj.png",winx/2 - 50,0,100,150,5,20)
 
+dummy = person("log.png",2500,475,60,125,0,100)
+
 solids = []
-brick0 = solid("black.png",-3000,600,6000,3000,0,solids)
-brick1 = solid("black.png",900,350,100,100,0,solids)
-brick2 = solid("black.png",750,500,100,100,0,solids)
-brick3 = solid("black.png",1825,500,50,120,0,solids)
+brick0 = solid("black.png",-3000,600,6000,3000,0,solids,True)
+brick1 = solid("black.png",900,350,100,100,0,solids,False)
+brick2 = solid("black.png",750,500,100,100,0,solids,False)
+brick3 = solid("black.png",1825,500,50,120,0,solids,False)
 
 bullets = []
 turrets = []
+dangerous = []
 gunBrick0 = turret("black.png",1300,500,0,0,10,solids,60,15,turrets)
 gunBrick1 = turret("black.png",2300,500,0,0,10,solids,60,-15,turrets)
+
+ui = []
 
 clock = time.Clock()
 FPS = 60
@@ -340,13 +443,22 @@ while game:
     ogoj.abilities()
     ogoj.cooldowns()
 
+    for i in people:
+        i.blit()
+    
     ogoj.blit()
-
+    
     for i in bullets:
         i.move()
         i.splat(solids)
         i.effect()
         i.blit()
+
+    for i in people:
+        i.hit(dangerous)
+
+    for i in bullets:
+        i.splat(people)
     
     for i in solids:
         i.blit()
@@ -356,6 +468,13 @@ while game:
 
     ogoj.abilityBlit()
 
+    for i in ui:
+        i.draw()
+        try:
+            i.stepAnim()
+        except:
+            pass
+    
     display.update()
 
     for e in event.get():
