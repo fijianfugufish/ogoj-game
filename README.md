@@ -2,7 +2,7 @@
 based off of gojo from jjk
 _______________________________________________________________________________________________________________________________________
 
-It was just supposed to be a supid thing to test my skills, but it ended up becoming my best project.
+It was just supposed to be a supid thing to test my skills, but it ended up becoming my best project (not anymore, check out 9Z).
 
 The code is really bad, messy and probably really ineficient. Don't judge me - it is my first platformer style thing.
 
